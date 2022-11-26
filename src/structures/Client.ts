@@ -8,6 +8,7 @@ import {
 import { ApplicationCommandType, ChatInputCommandInteraction } from "discord.js"
 import path from "path"
 import { config } from "../config"
+import { verifyUser } from "../data"
 
 class DevModule extends Extension {
   @ownerOnly
@@ -17,6 +18,7 @@ class DevModule extends Extension {
     description: "Check validation"
   })
   async ping(i: ChatInputCommandInteraction) {
+    verifyUser(i.user)
     await i.reply("정상작동중!")
   }
 
