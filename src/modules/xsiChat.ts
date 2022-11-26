@@ -43,14 +43,16 @@ class XsiChatExtension extends Extension {
       likabilityDelta: -2
     })
     this.interactionMap.add({
-      input: async message => /^[\d+\-*\/]*$/.exec(message.content.substring(4).replace(" ", "")) != null,
+      input: async message => /^[\d+\-*\/)(]*$/.exec(message.content.substring(4).replace(" ", "")) != null,
       reply: async (message, _) => {
-        await message.reply(message.content)
+        //This is safe because we validated message.content.substring(4) always matches /^[\d+\-*\/)(]*$/
+        await message.reply(`${eval(message.content.substring(4)).toString()}이에요!`)
       },
       bias: 1,
       likabilityDelta: 0
     })
   }
+
   @command({ name: "크시야" })
   async chatMainHandler(message: Message) {
     if(message.author.bot) return
