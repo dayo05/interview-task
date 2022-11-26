@@ -1,7 +1,8 @@
 import {
-  applicationCommand,
+  applicationCommand, argConverter,
   CommandClient,
   Extension,
+  listener,
   ownerOnly
 } from "@pikokr/command.ts"
 import { ApplicationCommandType, ChatInputCommandInteraction } from "discord.js"
@@ -18,12 +19,20 @@ class DevModule extends Extension {
   async ping(i: ChatInputCommandInteraction) {
     await i.reply("정상작동중!")
   }
+
+  @listener({ event: "ready" })
+  async ready() {
+    this.logger.info(`Logged in as ${this.client.user!.tag}`)
+    await this.commandClient.fetchOwners()
+  }
 }
 
 export class CustomizedCommandClient extends CommandClient {
   async setup() {
     console.log("등록중이에요!")
     await this.enableApplicationCommandsExtension({ guilds: config.guilds })
+    await this.enableTextCommandsExtension({ prefix: "" })
+
     await this.registry.registerModule(new DevModule())
 
     await this.registry.loadAllModulesInDirectory(

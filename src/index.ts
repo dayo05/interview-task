@@ -4,7 +4,7 @@ import { config } from "./config"
 import { CustomizedCommandClient } from "./structures"
 
 const client = new Client({
-  intents: ["Guilds", "DirectMessages"],
+  intents: ["Guilds", "DirectMessages", "GuildMessages", "MessageContent"]
 })
 
 const cts = new CustomizedCommandClient(client)
