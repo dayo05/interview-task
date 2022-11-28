@@ -30,14 +30,16 @@ class BadgeExtension extends Extension {
   async onButtonClick(interaction: ButtonInteraction) {
     if(interaction.customId === 'badge_list_back') {
       await interaction.deferUpdate()
-      await getDataOfUser(interaction.user, async (user, data) => {
-        await interaction.editReply({content: "back!", components: this.getBadgeComponents(data, Number((interaction.message.components[1] as ActionRow<ButtonComponent>).components[1].label?.split("/")[0]) - 2)})
+      let buttons = (interaction.message.components[1] as ActionRow<ButtonComponent>).components
+      await getDataOfUserId(buttons[3].label!, async (user, data) => {
+        await interaction.editReply({ components: this.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0]) - 2) })
       })
     }
     else if(interaction.customId === 'badge_list_forward') {
       await interaction.deferUpdate()
-      await getDataOfUser(interaction.user, async (user, data) => {
-        await interaction.editReply({content: "back!", components: this.getBadgeComponents(data, Number((interaction.message.components[1] as ActionRow<ButtonComponent>).components[1].label?.split("/")[0]))})
+      let buttons = (interaction.message.components[1] as ActionRow<ButtonComponent>).components
+      await getDataOfUserId(buttons[3].label!, async (user, data) => {
+        await interaction.editReply({ components: this.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0])) })
       })
     }
   }
@@ -58,14 +60,14 @@ class BadgeExtension extends Extension {
       data.badges.push({badgeId: Math.floor((Math.random() * 100000000))})
       await updateUserDataId(user, data)
       
-      await i.reply({content: "test", components: this.getBadgeComponents(data, 0)})
+      await i.reply({ content: `ID ${user}님의 배지들 입니당!`, components: this.getBadgeComponents(data, 0) })
     }, async _ => {
       await i.reply("먼저 등록을 해주세요!")
     }).catch(e => console.log(e))
   }
   
   getBadgeComponents(data: IUser, index: number): any {
-    const limit = 25
+    const limit = 2
     const row = new ActionRowBuilder<SelectMenuBuilder>()
       .addComponents(
         new SelectMenuBuilder()
@@ -100,6 +102,13 @@ class BadgeExtension extends Extension {
           .setLabel('다음꺼!')
           .setStyle(ButtonStyle.Primary)
           .setDisabled(index === Math.floor((data.badges.length - 1) / limit))
+      )
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('user_id')
+          .setLabel(data.id)
+          .setStyle(ButtonStyle.Danger)
+          .setDisabled(true)
       )
     return [row, buttons]
   }
