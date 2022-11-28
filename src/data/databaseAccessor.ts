@@ -27,8 +27,19 @@ const UserSchema = new Schema({
   verifiedAt: Date
 })
 
+export interface IBadgeMessage {
+  messageId: string,
+  userId: string
+}
+interface BadgeMessageModel extends IBadgeMessage, Document {}
+const BadgeMessageSchema = new Schema({
+  messageId: String,
+  userId: String
+})
+
 const UserModel = model<UserModel>('user', UserSchema)
 const BadgeModel = model<BadgeModel>('badge', BadgeSchema)
+const BadgeMessageModel = model<BadgeMessageModel>('badge_message', BadgeMessageSchema)
 
 async function setUserData(data: IUser) {
   await new UserModel(data).save()
@@ -56,6 +67,19 @@ export async function updateUserData(user: User, data: IUser, notVerifiedThen: (
 export async function updateUserDataId(id: string, data: IUser, notVerifiedThen: (user: string) => Promise<void> = async (_) => {}) {
   if(await isVerified(id)) await setUserData(data)
   else await notVerifiedThen(id)
+}
+
+export async function getBadgeMessageData(messageId: string, existsThen: (userId: string) => Promise<void>, notExistsThen: () => Promise<void> = async() => {}) {
+  let uid = (await BadgeMessageModel.findOne({'messageId': messageId}).exec())?.userId
+  if(uid !== null) await existsThen(uid!)
+  else await notExistsThen()
+}
+
+export async function addBadgeMessage(messageId: string, userId: string) {
+  await new BadgeMessageModel({
+    messageId: messageId,
+    userId: userId
+  }).save()
 }
 
 export async function verifyUser(user: User) {

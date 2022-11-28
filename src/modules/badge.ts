@@ -12,7 +12,7 @@ import {
   ButtonInteraction,
   ButtonStyle, ButtonComponent, ActionRow
 } from "discord.js"
-import { getDataOfUser, getDataOfUserId, IUser, updateUserDataId } from "../data"
+import { addBadgeMessage, getBadgeMessageData, getDataOfUser, getDataOfUserId, IUser, updateUserDataId } from "../data"
 
 class BadgeExtension extends Extension {
   constructor() {
@@ -20,6 +20,7 @@ class BadgeExtension extends Extension {
   }
   @listener({ event: Events.InteractionCreate })
   async onSelection(interaction: SelectMenuInteraction) {
+    if(!interaction.isSelectMenu()) return
     if(interaction.customId === 'badge_list') {
       await interaction.deferUpdate()
       await interaction.editReply({content: `배지 번호 ${interaction.values[0]}를 선택했습니다!`})
@@ -28,18 +29,24 @@ class BadgeExtension extends Extension {
 
   @listener({event: Events.InteractionCreate})
   async onButtonClick(interaction: ButtonInteraction) {
+    if(!interaction.isButton()) return
+
     if(interaction.customId === 'badge_list_back') {
       await interaction.deferUpdate()
-      let buttons = (interaction.message.components[1] as ActionRow<ButtonComponent>).components
-      await getDataOfUserId(buttons[3].label!, async (user, data) => {
-        await interaction.editReply({ components: this.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0]) - 2) })
+      await getBadgeMessageData(interaction.message.id, async uid => {
+        let buttons = (interaction.message.components[1] as ActionRow<ButtonComponent>).components
+        await getDataOfUserId(uid, async (user, data) => {
+          await interaction.editReply({ components: this.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0]) - 2) })
+        })
       })
     }
     else if(interaction.customId === 'badge_list_forward') {
       await interaction.deferUpdate()
-      let buttons = (interaction.message.components[1] as ActionRow<ButtonComponent>).components
-      await getDataOfUserId(buttons[3].label!, async (user, data) => {
-        await interaction.editReply({ components: this.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0])) })
+      await getBadgeMessageData(interaction.message.id, async uid => {
+        let buttons = (interaction.message.components[1] as ActionRow<ButtonComponent>).components
+        await getDataOfUserId(uid, async (user, data) => {
+          await interaction.editReply({ components: this.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0])) })
+        })
       })
     }
   }
@@ -59,8 +66,14 @@ class BadgeExtension extends Extension {
     await getDataOfUserId(user, async (id, data) => {
       data.badges.push({badgeId: Math.floor((Math.random() * 100000000))})
       await updateUserDataId(user, data)
-      
+
       await i.reply({ content: `ID ${user}님의 배지들 입니당!`, components: this.getBadgeComponents(data, 0) })
+      const reply = await i.fetchReply()
+      // @ts-ignore
+      BigInt.prototype.toJSON = function() { return this.toString() }
+      //console.log(JSON.stringify(reply))
+      //console.log(JSON.stringify(i))
+      await addBadgeMessage(reply.id, user)
     }, async _ => {
       await i.reply("먼저 등록을 해주세요!")
     }).catch(e => console.log(e))
@@ -102,13 +115,6 @@ class BadgeExtension extends Extension {
           .setLabel('다음꺼!')
           .setStyle(ButtonStyle.Primary)
           .setDisabled(index === Math.floor((data.badges.length - 1) / limit))
-      )
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('user_id')
-          .setLabel(data.id)
-          .setStyle(ButtonStyle.Danger)
-          .setDisabled(true)
       )
     return [row, buttons]
   }
