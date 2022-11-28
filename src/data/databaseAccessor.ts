@@ -2,7 +2,7 @@ import { User } from "discord.js"
 import * as mongoose from "mongoose"
 import { model, Model, Schema, Types } from "mongoose"
 
-interface IBadge {
+export interface IBadge {
   badgeId: number
 }
 interface BadgeModel extends IBadge, Types.Subdocument {}
@@ -10,7 +10,7 @@ const BadgeSchema = new Schema({
   badgeId: Number
 })
 
-interface IUser {
+export interface IUser {
   id: string
   username: string
   likability: number
