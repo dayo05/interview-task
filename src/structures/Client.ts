@@ -11,14 +11,13 @@ import { config } from "../config"
 import { verifyUser } from "../data"
 
 class DevModule extends Extension {
-  @ownerOnly
   @applicationCommand({
     type: ApplicationCommandType.ChatInput,
     name: "validate",
     description: "Check validation"
   })
   async ping(i: ChatInputCommandInteraction) {
-    verifyUser(i.user)
+    await verifyUser(i.user)
     await i.reply("정상작동중!")
   }
 
@@ -31,7 +30,6 @@ class DevModule extends Extension {
 
 export class CustomizedCommandClient extends CommandClient {
   async setup() {
-    console.log("등록중이에요!")
     await this.enableApplicationCommandsExtension({ guilds: config.guilds })
     await this.enableTextCommandsExtension({ prefix: "" })
 
