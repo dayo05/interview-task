@@ -7,7 +7,10 @@ export interface IBadge {
 }
 interface BadgeModel extends IBadge, Types.Subdocument {}
 const BadgeSchema = new Schema({
-  badgeId: Number
+  badgeId: {
+    type: Number,
+    default: -1
+  }
 })
 
 export interface IUser {
@@ -16,15 +19,18 @@ export interface IUser {
   likability: number
   battery: number
   badges: IBadge[]
+  badgeUpdateAt: Date
   verifiedAt: Date
 }
 interface UserModel extends IUser, Document {}
 const UserSchema = new Schema({
-  id: String,
-  username: String,
-  likability: Number,
-  badges: [BadgeSchema],
-  verifiedAt: Date
+  id: { type: String, required: true },
+  username: { type: String, required: true },
+  likability: { type: Number, default: 0 },
+  battery: { type: Number, default: 100 },
+  badges: { type: [BadgeSchema], default: [] },
+  badgeUpdateAt: { type: Date, default: Date.now },
+  verifiedAt: {type: Date, required: true }
 })
 
 export interface IBadgeMessage {
@@ -69,6 +75,26 @@ export async function updateUserDataId(id: string, data: IUser, notVerifiedThen:
   else await notVerifiedThen(id)
 }
 
+export async function getRankerBadge(limit: number): Promise<Array<IUser>> {
+  return await UserModel.aggregate(
+    [
+      {
+        "$project": {
+          "id": 1,
+          "username": 1,
+          "likability": 1,
+          "verifiedAt": 1,
+          "badges": 1,
+          "badgeUpdateAt": 1,
+          "length": { "$size": "$badges" }
+        }
+      },
+      { "$sort": { "length": -1, "badgeUpdateAt": -1 } },
+      { "$limit": limit }
+    ]
+  ).exec()
+}
+
 export async function getBadgeMessageData(messageId: string, existsThen: (userId: string) => Promise<void>, notExistsThen: () => Promise<void> = async() => {}) {
   let uid = (await BadgeMessageModel.findOne({'messageId': messageId}).exec())?.userId
   if(uid !== null) await existsThen(uid!)
@@ -90,6 +116,7 @@ export async function verifyUser(user: User) {
       likability: 0,
       battery: 100,
       badges: [],
+      badgeUpdateAt: new Date(),
       verifiedAt: new Date()
     })
 }
