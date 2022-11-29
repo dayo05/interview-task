@@ -10,7 +10,7 @@ import {
   SelectMenuInteraction,
   ButtonBuilder,
   ButtonInteraction,
-  ButtonStyle, ButtonComponent, ActionRow, SelectMenuComponent
+  ButtonStyle, ButtonComponent, ActionRow
 } from "discord.js"
 import {
   addBadgeMessage,
@@ -28,12 +28,11 @@ class BadgeExtension extends Extension {
 
   @listener({ event: Events.InteractionCreate })
   async onSelection(interaction: SelectMenuInteraction) {
-    if (!interaction.isSelectMenu()) return
     if (interaction.customId === 'badge_list') {
       await interaction.deferUpdate()
       await interaction.editReply({ content: `배지 번호 ${interaction.values[0]}를 선택했습니다!` })
     }
-    else if(interaction.customId == 'badge_rank') {
+    else if(interaction.customId === 'badge_rank') {
       await interaction.deferUpdate()
       await getDataOfUserId(interaction.values[0], async (id, data) => {
         await interaction.editReply({content: `${data.username}님의 배지 갯수는 ${data.badges.length}개 입니다!`})
@@ -128,9 +127,9 @@ class BadgeExtension extends Extension {
   }
 
   @applicationCommand({
-    name: "랭킹",
+    name: "배지랭킹",
     type: ApplicationCommandType.ChatInput,
-    description: "asdfasdf"
+    description: "누가 가장 많은 배지를 가지고 있을지 궁금하지 않나요??!"
   })
   async rank(i: ChatInputCommandInteraction) {
     await i.reply({
