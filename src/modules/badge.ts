@@ -17,7 +17,7 @@ import {
   getBadgeMessageData,
   getDataOfUserId,
   getRankerBadge,
-  IUser,
+  UserData,
   updateUserDataId
 } from "../data"
 
@@ -77,7 +77,7 @@ class BadgeExtension extends Extension {
     if (user === undefined)
       user = i.user.id //Default value
     await getDataOfUserId(user, async (id, data) => {
-      data.badges.push({ badgeId: Math.floor((Math.random() * 100000000)) })
+      data.equipBadge(Math.floor((Math.random() * 100000000)))
       await updateUserDataId(user, data)
 
       await i.reply({ content: `ID ${user}님의 배지들 입니당!`, components: this.getBadgeComponents(data, 0) })
@@ -87,7 +87,7 @@ class BadgeExtension extends Extension {
     }).catch(e => console.log(e))
   }
 
-  getBadgeComponents(data: IUser, index: number): any {
+  getBadgeComponents(data: UserData, index: number): any {
     const limit = 2
     const row = new ActionRowBuilder<SelectMenuBuilder>()
       .addComponents(

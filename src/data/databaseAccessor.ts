@@ -1,19 +1,20 @@
 import { User } from "discord.js"
 import * as mongoose from "mongoose"
-import { model, Model, Schema, Types } from "mongoose"
+import { HydratedDocument, model, Model, Schema } from "mongoose"
 
-export interface IBadge {
+interface IBadge {
   badgeId: number
 }
-interface BadgeModel extends IBadge, Types.Subdocument {}
-const BadgeSchema = new Schema({
+type BadgeModel = Model<IBadge>
+const BadgeSchema = new Schema<IBadge, BadgeModel>({
   badgeId: {
     type: Number,
     default: -1
   }
 })
+export type BadgeData = HydratedDocument<IBadge>
 
-export interface IUser {
+interface IUser {
   id: string
   username: string
   likability: number
@@ -22,8 +23,12 @@ export interface IUser {
   badgeUpdateAt: Date
   verifiedAt: Date
 }
-interface UserModel extends IUser, Document {}
-const UserSchema = new Schema({
+interface IUserMethods {
+  equipBadge(id: number): void
+  getLikeLevel(): number
+}
+type UserModel = Model<IUser, {}, IUserMethods>
+const UserSchema = new Schema<IUser, UserModel, IUserMethods>({
   id: { type: String, required: true },
   username: { type: String, required: true },
   likability: { type: Number, default: 0 },
@@ -32,50 +37,64 @@ const UserSchema = new Schema({
   badgeUpdateAt: { type: Date, default: Date.now },
   verifiedAt: {type: Date, required: true }
 })
+UserSchema.method('equipBadge', function equipBadge(id: number) {
+  this.badges.push({ badgeId: id })
+  this.badgeUpdateAt = new Date()
+})
+UserSchema.method('getLikeLevel', function getLikeLevel(): number {
+  if(this.likability <= -6) return 0
+  else if(this.likability <= 29) return 1
+  else if(this.likability <= 199) return 2
+  else if(this.likability <= 699) return 3
+  else if(this.likability <= 1499) return 4
+  else return 5
+})
+export type UserData = HydratedDocument<IUser, IUserMethods>
 
-export interface IBadgeMessage {
+interface IBadgeMessage {
   messageId: string,
   userId: string
 }
-interface BadgeMessageModel extends IBadgeMessage, Document {}
-const BadgeMessageSchema = new Schema({
+type BadgeMessageModel = Model<IBadgeMessage, {}>
+const BadgeMessageSchema = new Schema<IBadgeMessage, BadgeMessageModel>({
   messageId: String,
   userId: String
 })
+export type BadgeMessageData = HydratedDocument<IBadgeMessage>
 
-const UserModel = model<UserModel>('user', UserSchema)
-const BadgeModel = model<BadgeModel>('badge', BadgeSchema)
-const BadgeMessageModel = model<BadgeMessageModel>('badge_message', BadgeMessageSchema)
+const UserModel = model<IUser, UserModel>('user', UserSchema)
+const BadgeModel = model<IBadge, BadgeModel>('badge', BadgeSchema)
+const BadgeMessageModel = model<IBadgeMessage, BadgeMessageModel>('badge_message', BadgeMessageSchema)
 
-async function setUserData(data: IUser) {
-  await new UserModel(data).save()
+async function setUserData(data: UserData) {
+  await data.save()
 }
 
 export async function isVerified(id: string): Promise<boolean> {
   return await UserModel.findOne({ 'id': id }).exec() !== null
 }
 
-export async function getDataOfUser(user: User, existThen: (user: User, data: IUser) => Promise<void>, notVerifiedThen: (user: User) => Promise<void> = (async _ => {})) {
-  if(await isVerified(user.id)) await existThen(user, <IUser>await UserModel.findOne({ 'id': user.id }).exec())
+export async function getDataOfUser(user: User, existThen: (user: User, data: UserData) => Promise<void>, notVerifiedThen: (user: User) => Promise<void> = (async _ => {})) {
+  if(await isVerified(user.id)) await existThen(user, <UserData>await UserModel.findOne({ 'id': user.id }).exec())
   else await notVerifiedThen(user)
 }
 
-export async function getDataOfUserId(id: string, existThen: (id: string, data: IUser) => Promise<void>, notVerifiedThen: (id: string) => Promise<void> = (async _ => {})) {
-  if(await isVerified(id)) await existThen(id, <IUser>await UserModel.findOne({'id': id}).exec())
+export async function getDataOfUserId(id: string, existThen: (id: string, data: UserData) => Promise<void>, notVerifiedThen: (id: string) => Promise<void> = (async _ => {})) {
+  if(await isVerified(id)) await existThen(id, <UserData>await UserModel.findOne({'id': id}).exec())
   else await notVerifiedThen(id)
 }
 
-export async function updateUserData(user: User, data: IUser, notVerifiedThen: (user: User) => Promise<void> = async (_) => {}) {
-  if(await isVerified(user.id)) await setUserData(data)
+export async function updateUserData(user: User, data: UserData, notVerifiedThen: (user: User) => Promise<void> = async (_) => {}) {
+  if(await isVerified(user.id) && user.id === data.id) await setUserData(data)
   else await notVerifiedThen(user)
 }
 
-export async function updateUserDataId(id: string, data: IUser, notVerifiedThen: (user: string) => Promise<void> = async (_) => {}) {
-  if(await isVerified(id)) await setUserData(data)
+export async function updateUserDataId(id: string, data: UserData, notVerifiedThen: (user: string) => Promise<void> = async (_) => {}) {
+  if(await isVerified(id) && id === data.id) await setUserData(data)
   else await notVerifiedThen(id)
 }
 
-export async function getRankerBadge(limit: number): Promise<Array<IUser>> {
+export async function getRankerBadge(limit: number): Promise<Array<UserData>> {
   return await UserModel.aggregate(
     [
       {
@@ -89,7 +108,7 @@ export async function getRankerBadge(limit: number): Promise<Array<IUser>> {
           "length": { "$size": "$badges" }
         }
       },
-      { "$sort": { "length": -1, "badgeUpdateAt": -1 } },
+      { "$sort": { "length": -1, "badgeUpdateAt": 1 } },
       { "$limit": limit }
     ]
   ).exec()
@@ -110,7 +129,7 @@ export async function addBadgeMessage(messageId: string, userId: string) {
 
 export async function verifyUser(user: User) {
   if (!await isVerified(user.id))
-    await setUserData({
+    await setUserData(new UserModel({
       id: user.id,
       username: user.username,
       likability: 0,
@@ -118,11 +137,7 @@ export async function verifyUser(user: User) {
       badges: [],
       badgeUpdateAt: new Date(),
       verifiedAt: new Date()
-    })
-}
-
-export function getLikeLevel(data: IUser): number {
-  return 0
+    }))
 }
 
 export async function initDB() {
