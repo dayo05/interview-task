@@ -4,13 +4,12 @@ import {
   ChatInputCommandInteraction,
   ApplicationCommandOptionType,
   ActionRowBuilder,
-  SelectMenuBuilder,
   APISelectMenuOption,
   Events,
   SelectMenuInteraction,
   ButtonBuilder,
   ButtonInteraction,
-  ButtonStyle, ButtonComponent, ActionRow
+  ButtonStyle, ButtonComponent, ActionRow, StringSelectMenuBuilder
 } from "discord.js"
 import {
   addBadgeMessage,
@@ -88,9 +87,9 @@ class BadgeExtension extends Extension {
 
   getBadgeComponents(data: UserData, index: number): any {
     const limit = 2
-    const row = new ActionRowBuilder<SelectMenuBuilder>()
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>()
       .addComponents(
-        new SelectMenuBuilder()
+        new StringSelectMenuBuilder()
           .setCustomId('badge_list')
           .setPlaceholder('badges')
           .addOptions(data.badges.slice(index * limit, (index + 1) * limit).map<APISelectMenuOption>((v) => {
@@ -133,9 +132,9 @@ class BadgeExtension extends Extension {
   })
   async rank(i: ChatInputCommandInteraction) {
     await i.reply({
-      content: '아주 평범한 크시의 배지 랭킹이에요!', components: [new ActionRowBuilder<SelectMenuBuilder>()
+      content: '아주 평범한 크시의 배지 랭킹이에요!', components: [new ActionRowBuilder<StringSelectMenuBuilder>()
         .addComponents(
-          new SelectMenuBuilder()
+          new StringSelectMenuBuilder()
             .setPlaceholder("배지 랭킹 1위는?? 두구두구두구")
             .setCustomId('badge_rank')
             .addOptions((await getRankerBadge(20)).map<APISelectMenuOption>((v, index) => {
