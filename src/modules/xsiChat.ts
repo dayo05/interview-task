@@ -1,4 +1,4 @@
-import { command, Extension } from "@pikokr/command.ts"
+import { command, Extension } from "@ddayo/command.ts"
 import { ApplicationCommandType, ChatInputCommandInteraction, Message } from "discord.js"
 import { randomInt } from "crypto"
 import { getDataOfUser, updateUserData } from "../data"

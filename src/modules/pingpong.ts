@@ -1,4 +1,4 @@
-import { applicationCommand, Extension } from "@pikokr/command.ts"
+import { applicationCommand, Extension } from "@ddayo/command.ts"
 import { ApplicationCommandType, ChatInputCommandInteraction, Message } from "discord.js"
 
 class PingPongExtension extends Extension {

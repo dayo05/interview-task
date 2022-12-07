@@ -11,7 +11,7 @@
     "typescript": "4.7.4"
   },
   "dependencies": {
-    "@pikokr/command.ts": "^5.3.1-dev.a03aefb",
+    "@ddayo/command.ts": "0.5.4",
     "discord.js": "^14.0.3",
     "mongoose": "^6.7.3",
     "tslog": "3.3.4"

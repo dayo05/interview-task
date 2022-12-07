@@ -13,6 +13,7 @@ const cts = new CustomizedCommandClient(client)
 const start = async () => {
   await initDB()
 
+  console.log("asdf")
   await cts.setup()
 
   await client.login(config.token)

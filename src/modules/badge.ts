@@ -1,4 +1,4 @@
-import { applicationCommand, Extension, listener, option } from "@pikokr/command.ts"
+import {applicationCommand, Extension, interaction, listener, option} from "@ddayo/command.ts"
 import {
   ApplicationCommandType,
   ChatInputCommandInteraction,
@@ -25,41 +25,54 @@ class BadgeExtension extends Extension {
     super()
   }
 
-  @listener({ event: Events.InteractionCreate })
-  async onSelection(interaction: SelectMenuInteraction) {
-    if (interaction.customId === 'badge_list') {
-      await interaction.deferUpdate()
-      await interaction.editReply({ content: `배지 번호 ${interaction.values[0]}를 선택했습니다!` })
-    }
-    else if(interaction.customId === 'badge_rank') {
-      await interaction.deferUpdate()
-      await getDataOfUserId(interaction.values[0], async (id, data) => {
-        await interaction.editReply({content: `${data.username}님의 배지 갯수는 ${data.badges.length}개 입니다!`})
-      }, async () => {
-        await interaction.editReply("Not found!")
-      })
-    }
+  @interaction({
+    customId: "badge_list",
+    receiveType: "SelectMenu"
+  })
+  async onBadgeListInteraction(i: SelectMenuInteraction) {
+    await i.deferUpdate()
+    await i.editReply({ content: `배지 번호 ${i.values[0]}를 선택했습니다!` })
   }
 
-  @listener({ event: Events.InteractionCreate })
-  async onButtonClick(interaction: ButtonInteraction) {
-    if (interaction.customId === 'badge_list_back') {
-      await interaction.deferUpdate()
-      await getBadgeMessageData(interaction.message.id, async uid => {
-        let buttons = (interaction.message.components[1] as ActionRow<ButtonComponent>).components
-        await getDataOfUserId(uid, async (user, data) => {
-          await interaction.editReply({ components: this.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0]) - 2) })
-        })
+  @interaction({
+    customId: "badge_rank",
+    receiveType: "SelectMenu"
+  })
+  async onBadgeRankSelection(i: SelectMenuInteraction) {
+    await i.deferUpdate()
+    await getDataOfUserId(i.values[0], async (id, data) => {
+      await i.editReply({content: `${data.username}님의 배지 갯수는 ${data.badges.length}개 입니다!`})
+    }, async () => {
+      await i.editReply("Not found!")
+    })
+  }
+
+  @interaction({
+    customId: "badge_list_back",
+    receiveType: "Button"
+  })
+  async onListBackClicked(i: ButtonInteraction) {
+    await i.deferUpdate()
+    await getBadgeMessageData(i.message.id, async uid => {
+      let buttons = (i.message.components[1] as ActionRow<ButtonComponent>).components
+      await getDataOfUserId(uid, async (user, data) => {
+        await i.editReply({ components: BadgeExtension.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0]) - 2) })
       })
-    } else if (interaction.customId === 'badge_list_forward') {
-      await interaction.deferUpdate()
-      await getBadgeMessageData(interaction.message.id, async uid => {
-        let buttons = (interaction.message.components[1] as ActionRow<ButtonComponent>).components
-        await getDataOfUserId(uid, async (user, data) => {
-          await interaction.editReply({ components: this.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0])) })
-        })
+    })
+  }
+
+  @interaction({
+    customId: "badge_list_forward",
+    receiveType: "Button"
+  })
+  async onListForwardClicked(i: ButtonInteraction) {
+    await i.deferUpdate()
+    await getBadgeMessageData(i.message.id, async uid => {
+      let buttons = (i.message.components[1] as ActionRow<ButtonComponent>).components
+      await getDataOfUserId(uid, async (user, data) => {
+        await i.editReply({ components: BadgeExtension.getBadgeComponents(data, Number(buttons[1].label?.split("/")[0])) })
       })
-    }
+    })
   }
 
   @applicationCommand({
@@ -78,14 +91,14 @@ class BadgeExtension extends Extension {
       data.equipBadge(Math.floor((Math.random() * 100000000)))
       await updateUserDataId(user, data)
 
-      await i.reply({ content: `ID ${user}님의 배지들 입니당!`, components: this.getBadgeComponents(data, 0) })
+      await i.reply({ content: `ID ${user}님의 배지들 입니당!`, components: BadgeExtension.getBadgeComponents(data, 0) })
       await addBadgeMessage((await i.fetchReply()).id, user)
     }, async _ => {
       await i.reply("먼저 등록을 해주세요!")
     }).catch(e => console.log(e))
   }
 
-  getBadgeComponents(data: UserData, index: number): any {
+  static getBadgeComponents(data: UserData, index: number): any {
     const limit = 2
     const row = new ActionRowBuilder<StringSelectMenuBuilder>()
       .addComponents(

@@ -4,7 +4,7 @@ import {
   Extension,
   listener,
   ownerOnly
-} from "@pikokr/command.ts"
+} from "@ddayo/command.ts"
 import { ApplicationCommandType, ChatInputCommandInteraction } from "discord.js"
 import path from "path"
 import { config } from "../config"
@@ -32,6 +32,7 @@ export class CustomizedCommandClient extends CommandClient {
   async setup() {
     await this.enableApplicationCommandsExtension({ guilds: config.guilds })
     await this.enableTextCommandsExtension({ prefix: "" })
+    await this.enableInteractionHandlerExtension()
 
     await this.registry.registerModule(new DevModule())
 
